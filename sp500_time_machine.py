@@ -13,10 +13,11 @@ FIRST_YEAR = 1928 # This is the first year of data from the dataset
 
 realized_gain_list = []
 
-def sp500_data_analysis(realized_gains: list, span_in_years: int, total_spans: int):
+# todo Have this function return a data structure which contains the analytical data, then create another function for printing out the information
+def sp500_data_analysis(realized_gains: list, span_in_years: int) -> None:
     # Display the average, minimum and maximum gain over the requested time span
-    mean = int(sum(realized_gains) / total_spans)
-    print("Average %s year realized gains plus principle over %d years is %s" % (span_in_years, total_spans, f'{mean:,}'))
+    mean = int(sum(realized_gains) / (len(realized_gains)))
+    print("Average %s year realized gains plus principle over %d years is %s" % (span_in_years, len(realized_gains), f'{mean:,}'))
 
     """Calculate the standard deviation"""
     std_dev = statistics.stdev(realized_gains)
@@ -33,10 +34,10 @@ def sp500_data_analysis(realized_gains: list, span_in_years: int, total_spans: i
     # 90% confidence z-value = 1.65
     # 95% confidence z-value = 1.96
     # 99% confidence z-value = 2.58
-    upper_interval = mean + 2.58 * (std_dev / math.sqrt(total_spans))
+    upper_interval = mean + 2.58 * (std_dev / math.sqrt(len(realized_gains)))
     print("99%% Confidence Interval (Upper) = %s" % f'{int(upper_interval):,}')
 
-    lower_interval = mean - 2.58 * (std_dev / math.sqrt(total_spans))
+    lower_interval = mean - 2.58 * (std_dev / math.sqrt(len(realized_gains)))
     print("99%% Confidence Interval (Lower) = %s" % f'{int(lower_interval):,}')
 
     # Find the min/max values
@@ -71,8 +72,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     """Determine the total number of spans within the requested data set (years)"""
-    total_spans = (datetime.date.today().year - FIRST_YEAR - int(args.span)) + 1
+    total_spans = (datetime.date.today().year - FIRST_YEAR - args.span) + 1
 
     sp500_historical_returns(args.principle, args.span, args.annual, total_spans)
-    sp500_data_analysis(realized_gain_list, int(args.span), total_spans)
-    
+    sp500_data_analysis(realized_gain_list, args.span)
+
