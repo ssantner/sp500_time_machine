@@ -11,45 +11,60 @@ from sp500_data import growth
 MONTHS_PER_YEAR = 12
 FIRST_YEAR = 1928 # This is the first year of data from the dataset
 
+# Store each S&P 500 realized gain over the requested span
 realized_gain_list = []
 
-# todo Have this function return a data structure which contains the analytical data, then create another function for printing out the information
+# Create a dictionary for storing the statical analysis results
+realized_gain_stats_dict = {}
+
+def sp500_display_results(analysis_results: list) -> None:
+    print("Average %s year realized gains plus principle over %d years is %s" % (analysis_results["span_in_years"], len(realized_gain_list), f'{analysis_results["mean"]:,}'))
+    print("Standard Deviation = %s" % f'{int(analysis_results["std_dev"]):,}')
+    print("99%% Confidence Interval (Upper) = %s" % f'{int(analysis_results["upper_confidence_interval"]):,}')
+    print("99%% Confidence Interval (Lower) = %s" % f'{int(analysis_results["lower_confidence_interval"]):,}')
+    print("Minimum realized gain plus principle over %d years occurred from %s to %s with a final balance of %s" % 
+        (analysis_results["span_in_years"], analysis_results["min_year"], analysis_results["min_year"] + analysis_results["span_in_years"], f'{int(analysis_results["min_gain_over_span"]):,}'))
+    print("Maximum realized gain plus principle over %d years occurred from %s to %s with a final balance of %s" % 
+        (analysis_results["span_in_years"], analysis_results["max_year"], analysis_results["max_year"] + analysis_results["span_in_years"], f'{int(analysis_results["max_gain_over_span"]):,}'))
+
 def sp500_data_analysis(realized_gains: list, span_in_years: int) -> None:
-    # Display the average, minimum and maximum gain over the requested time span
+    realized_gain_stats_dict["span_in_years"] = span_in_years
+
+    """Determine the mean value"""
     mean = int(sum(realized_gains) / (len(realized_gains)))
-    print("Average %s year realized gains plus principle over %d years is %s" % (span_in_years, len(realized_gains), f'{mean:,}'))
+    realized_gain_stats_dict.update({"mean":mean})
 
     """Calculate the standard deviation"""
     std_dev = statistics.stdev(realized_gains)
-    print("Standard Deviation = %s" % f'{int(std_dev):,}')
+    realized_gain_stats_dict.update({"std_dev":std_dev})
 
-    # Determine the 99% confidence interval
-    #
-    # Stock market returns are not normally distributed, so this is a simplification of actual real-world data
-    # https://klementoninvesting.substack.com/p/the-distribution-of-stock-market
-    # 
-    # z-score values are based on normal distributions
-    # The value of 1.96 is based on the fact that 95% of the area of a normal distribution is within 1.96 standard deviations of the mean
-    # Likewise, 2.58 standard deviations contain 99% of the area of a normal distribution
-    # 90% confidence z-value = 1.65
-    # 95% confidence z-value = 1.96
-    # 99% confidence z-value = 2.58
-    upper_interval = mean + 2.58 * (std_dev / math.sqrt(len(realized_gains)))
-    print("99%% Confidence Interval (Upper) = %s" % f'{int(upper_interval):,}')
+    """Determine the 99% confidence interval
+    
+       Stock market returns are not normally distributed, so this is a simplification of actual real-world data
+       https://klementoninvesting.substack.com/p/the-distribution-of-stock-market
+       
+       z-score values are based on normal distributions
+       The value of 1.96 is based on the fact that 95% of the area of a normal distribution is within 1.96 standard deviations of the mean
+       Likewise, 2.58 standard deviations contain 99% of the area of a normal distribution
+       90% confidence z-value = 1.65
+       95% confidence z-value = 1.96
+       99% confidence z-value = 2.58"""
+    upper_confidence_interval = mean + 2.58 * (std_dev / math.sqrt(len(realized_gains)))
+    realized_gain_stats_dict.update({"upper_confidence_interval":upper_confidence_interval})
 
-    lower_interval = mean - 2.58 * (std_dev / math.sqrt(len(realized_gains)))
-    print("99%% Confidence Interval (Lower) = %s" % f'{int(lower_interval):,}')
+    lower_confidence_interval = mean - 2.58 * (std_dev / math.sqrt(len(realized_gains)))
+    realized_gain_stats_dict.update({"lower_confidence_interval":lower_confidence_interval})
 
-    # Find the min/max values
-    min_gain = min(realized_gains)
-    min_gain_index = realized_gains.index(min_gain)
-    print("Minimum realized gain plus principle over %d years occurred from %s to %s with a final balance of %s" % 
-        (span_in_years, min_gain_index + FIRST_YEAR, min_gain_index + FIRST_YEAR + span_in_years, f'{int(min_gain):,}'))
+    """Find the min/max values"""
+    min_gain_over_span = min(realized_gains)
+    min_year = realized_gains.index(min_gain_over_span) + FIRST_YEAR
+    realized_gain_stats_dict.update({"min_gain_over_span":min_gain_over_span})
+    realized_gain_stats_dict.update({"min_year":min_year})
 
-    max_gain = max(realized_gains)
-    man_gain_index = realized_gains.index(max_gain)
-    print("Maximum realized gain plus principle over %d years occurred from %s to %s with a final balance of %s" % 
-        (span_in_years, man_gain_index + FIRST_YEAR, man_gain_index + FIRST_YEAR + span_in_years, f'{int(max_gain):,}'))
+    max_gain_over_span = max(realized_gains)
+    max_year = realized_gains.index(max_gain_over_span) + FIRST_YEAR
+    realized_gain_stats_dict.update({"max_gain_over_span":max_gain_over_span})
+    realized_gain_stats_dict.update({"max_year":max_year})
 
 def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_contribution: int, total_spans) -> None:
     # Adjust the starting year for each span
@@ -76,4 +91,5 @@ if __name__ == "__main__":
 
     sp500_historical_returns(args.principle, args.span, args.annual, total_spans)
     sp500_data_analysis(realized_gain_list, args.span)
+    sp500_display_results(realized_gain_stats_dict)
 
