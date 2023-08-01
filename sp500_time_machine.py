@@ -11,14 +11,11 @@ from sp500_data import growth
 MONTHS_PER_YEAR = 12
 FIRST_YEAR = 1928 # This is the first year of data from the dataset
 
-# Store each S&P 500 realized gain over the requested span
-realized_gain_list = []
-
-# Create a dictionary for storing the statical analysis results
-realized_gain_stats_dict = {}
-
+"""
+Display the results of the statistical analysis of the historical realized gains of the S&P 500
+"""
 def sp500_display_results(analysis_results: list) -> None:
-    print("Average %s year realized gains plus principle over %d years is %s" % (analysis_results["span_in_years"], len(realized_gain_list), f'{analysis_results["mean"]:,}'))
+    print("Average %s year realized gains plus principle over %d years is %s" % (analysis_results["span_in_years"], analysis_results["gain_list_len"], f'{analysis_results["mean"]:,}'))
     print("Standard Deviation = %s" % f'{int(analysis_results["std_dev"]):,}')
     print("99%% Confidence Interval (Upper) = %s" % f'{int(analysis_results["upper_confidence_interval"]):,}')
     print("99%% Confidence Interval (Lower) = %s" % f'{int(analysis_results["lower_confidence_interval"]):,}')
@@ -27,7 +24,12 @@ def sp500_display_results(analysis_results: list) -> None:
     print("Maximum realized gain plus principle over %d years occurred from %s to %s with a final balance of %s" % 
         (analysis_results["span_in_years"], analysis_results["max_year"], analysis_results["max_year"] + analysis_results["span_in_years"], f'{int(analysis_results["max_gain_over_span"]):,}'))
 
-def sp500_data_analysis(realized_gains: list, span_in_years: int) -> None:
+"""
+Return a dictionary containing relevant statistics from the historical realized gains
+"""
+def sp500_data_analysis(realized_gains: list, span_in_years: int):
+    realized_gain_stats_dict = {}
+
     realized_gain_stats_dict["span_in_years"] = span_in_years
 
     """Determine the mean value"""
@@ -66,7 +68,16 @@ def sp500_data_analysis(realized_gains: list, span_in_years: int) -> None:
     realized_gain_stats_dict.update({"max_gain_over_span":max_gain_over_span})
     realized_gain_stats_dict.update({"max_year":max_year})
 
-def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_contribution: int, total_spans) -> None:
+    realized_gain_stats_dict.update({"gain_list_len":len(realized_gains)})
+
+    return realized_gain_stats_dict
+
+"""
+Return a list containing the historical gains of the S&P 500
+"""
+def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_contribution: int, total_spans):
+    realized_gain_list = []
+
     # Adjust the starting year for each span
     for base_year in range(total_spans):
         realized_gains = starting_balance
@@ -78,7 +89,11 @@ def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_c
         realized_gain_list.append(realized_gains)
         print("S&P realized gains plus principle from %s to %s for %s starting balance = $%s" % ((FIRST_YEAR + base_year), (FIRST_YEAR + base_year + span_in_years), f'{starting_balance:,}', f'{int(realized_gains):,}'))
 
-"""Given an initial investment, an annual contribution and a span in years, show how the investment would mature based on historical trends of the S&P 500"""
+    return realized_gain_list
+
+"""
+Given an initial investment, an annual contribution and a span in years, show how the investment would mature based on historical trends of the S&P 500
+"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--principle", help="The initial investment amount", type=int)
@@ -89,7 +104,7 @@ if __name__ == "__main__":
     """Determine the total number of spans within the requested data set (years)"""
     total_spans = (datetime.date.today().year - FIRST_YEAR - args.span) + 1
 
-    sp500_historical_returns(args.principle, args.span, args.annual, total_spans)
-    sp500_data_analysis(realized_gain_list, args.span)
-    sp500_display_results(realized_gain_stats_dict)
+    list_of_realized_gains = sp500_historical_returns(args.principle, args.span, args.annual, total_spans)
+    stats_dictionary = sp500_data_analysis(list_of_realized_gains, args.span)
+    sp500_display_results(stats_dictionary)
 
