@@ -11,6 +11,9 @@ from sp500_data import growth
 MONTHS_PER_YEAR = 12
 FIRST_YEAR = 1928 # This is the first year of data from the dataset
 
+# Nice online calculator to see historical returns of ETF's
+# https://dqydj.com/etf-return-calculator/
+
 """
 Display the results of the statistical analysis of the historical realized gains of the S&P 500
 """
@@ -75,7 +78,7 @@ def sp500_data_analysis(realized_gains: list, span_in_years: int):
 """
 Return a list containing the historical gains of the S&P 500
 """
-def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_contribution: int, total_spans):
+def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_contribution: int, total_spans, dividend: float):
     realized_gain_list = []
 
     # Adjust the starting year for each span
@@ -83,7 +86,7 @@ def sp500_historical_returns(starting_balance: int, span_in_years: int, annual_c
         realized_gains = starting_balance
         # Loop through each span, month by month
         for month in range(span_in_years * MONTHS_PER_YEAR):
-            realized_gains = (realized_gains + (annual_contribution / MONTHS_PER_YEAR)) * (1 + growth[month + base_year] / 100)
+            realized_gains = (realized_gains + (annual_contribution / MONTHS_PER_YEAR)) * (1 + growth[month + base_year] / 100) + (realized_gains * dividend) / MONTHS_PER_YEAR
 
         # Store each realized gain over the requested span in a list for later processing
         realized_gain_list.append(realized_gains)
@@ -99,12 +102,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--principle", help="The initial investment amount", type=int)
     parser.add_argument("-s", "--span", help="The number of consecutive years (span) to iterate over", type=int)
     parser.add_argument("-a", "--annual", help="The annual contribution amount",type=int)
+    parser.add_argument("-d", "--dividend", help="The dividend return as a percent",type=float)
     args = parser.parse_args()
 
     """Determine the total number of spans within the requested data set (years)"""
     total_spans = (datetime.date.today().year - FIRST_YEAR - args.span) + 1
 
-    list_of_realized_gains = sp500_historical_returns(args.principle, args.span, args.annual, total_spans)
+    list_of_realized_gains = sp500_historical_returns(args.principle, args.span, args.annual, total_spans, args.dividend)
     stats_dictionary = sp500_data_analysis(list_of_realized_gains, args.span)
     sp500_display_results(stats_dictionary)
 
